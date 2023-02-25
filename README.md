@@ -1,4 +1,4 @@
-# SMART Home  (IoT Final Project)
+# CasaConnect (IoT Final Project: Smart Home )
 
 This is the repository for the group project of the **"GREEN"** team for IoT W23 at Vanier College. It includes:
 

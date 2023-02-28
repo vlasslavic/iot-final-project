@@ -176,7 +176,7 @@ app.layout = html.Div(id="theme-switch-div", children=[
 def update_output(on):
     if on:
         GPIO.output(ledPin, GPIO.HIGH)
-        img = html.I(className="fa-solid fa-lightbulb ", style={'font-size': '10rem', 'color': '#ffe100', 'filter': 'drop-shadow(0 0 50px #eac86c)'})
+        img = html.I(className="fa-solid fa-lightbulb blob", style={'font-size': '10rem', 'color': '#ffe100', 'filter': 'drop-shadow(0 0 50px #eac86c)'})
         return img
             
     else:

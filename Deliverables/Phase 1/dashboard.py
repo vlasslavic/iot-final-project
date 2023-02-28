@@ -9,7 +9,6 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 GPIO.setup(21, GPIO.OUT)
 
-
 app = dash.Dash(__name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP,dbc.icons.FONT_AWESOME]
 )
@@ -20,20 +19,18 @@ app.title = 'CasaConnect'
 nav = html.Div(children='Log In', style={'text-align': 'center'})
          
 
-header = dbc.NavbarSimple(
-    children=[
-        dbc.NavItem(dbc.NavLink(nav), style={'text-align': 'end'})
-    ],
-    brand=[html.Div(id='Logo-full', children=[
-         html.Img(src=app.get_asset_url('logo_full.png'), width='400rem',  ),
-        ], className="w-100")],
-    brand_href="/",
-    color="light",
-    dark=False,
-    sticky='top', 
-    className="d-flex justify-content-between shadow-lg "
-)
+header = html.Header(children=[
+    html.Section(children=[
+        html.Div(id='Logo-full', children=[
+        html.Img(src=app.get_asset_url('logo_full.png'), width='400rem', ),
+        ], className=""),
 
+                dbc.NavbarSimple(children=[
+                    dbc.NavItem(dbc.NavLink(nav), style={'text-align': 'end'}),
+                ]),
+            ], className="container d-flex justify-content-between py-3")
+    ],className='bg-light shadow-lg'
+)
 
 body = html.Main(children=[
         dbc.Container(children=[
@@ -65,8 +62,6 @@ footer = html.Footer([
                   html.Small(children=['2023 © CasaConnect by ', html.Span(children='GREEN', className='text-success', style={'filter': 'drop-shadow(0 0 80px green)'}), ' Team'])
             ]),
             ],id='sticky-footer', className="fixed-bottom py-4 bg-dark text-white-50 ")
-
-
 
 app.layout = html.Div(id="theme-switch-div", children=[
     header,

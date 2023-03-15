@@ -4,6 +4,7 @@ from dash import html, Input, Output, dcc, Dash
 import dash_bootstrap_components as dbc
 import time
 import RPi.GPIO as GPIO
+import Freenove_DHT as DHT
 
 # Circuit Start ================================================================
 
@@ -15,7 +16,18 @@ GPIO.setup(ledPin, GPIO.OUT)
 # fanPin =
 # GPIO.setup(fanPin, GPIO.OUT)
 
+DHTPin = 17 #define the pin of DHT11
+dht = DHT.DHT(DHTPin) #create a DHT class object
+dht.readDHT11()
+
 # Circuit End ==================================================================
+
+# Variables Start===============================================================
+
+currentTemperature = 0
+currentHumidity = 0
+
+# Variables End ================================================================
 
 # UI Start =====================================================================
 
@@ -27,13 +39,13 @@ app = dash.Dash(__name__,
 # Web page title
 app.title = 'CasaConnect'
 
-# Time Variable for Display 
+# Time Variable for Display
 t = time.localtime()
 current_time = time.strftime("%H:%M%p", t)
 
 # Header navigation Links
 nav = html.Div(children='Log In', style={'text-align': 'center'})
-         
+
 # Page header containing Logo and future Log-In feature
 header = html.Header(children=[
     html.Section(children=[
@@ -60,7 +72,7 @@ ledCard = html.Div(children=[
                                 color='#ffe100',
                                 size=75,
                                 on=False
-                            ),    
+                            ),
                         ],className="card rounded-4 w-100 bg-light py-2 px-4 m-3 h-75 shadow-sm"),
                     ], className='w-25')
 
@@ -76,13 +88,14 @@ fanCard = html.Div(children=[
                                 color='#9eff00',
                                 size=75,
                                 on=False
-                            ),    
+                            ),
                         ],className="card rounded-4 w-100 bg-light py-2 px-4 m-3 h-75 shadow-sm"),
                     ], className='w-25 ')
 
 # Card that displays the Temperature, Humidity, and Light Intensity
 # Used ID's: current-thermometer, current-humidity, current-light-intensity
 metricsCard = html.Div(children=[
+                    dcc.Interval(id='interval', interval=3000, n_intervals=0),
                     html.Div(children=['Climate:', html.Button(id='', className='btn btn-primary mt-1', children=['Adjust'])], className='display-6 ms-3 d-flex justify-content-between align-items-center me-3'),
                     html.Div(children=[
                             html.Div(id='', children=[
@@ -90,14 +103,14 @@ metricsCard = html.Div(children=[
                                     id='current-thermometer',
                                     label='Current temperature',
                                     labelPosition='top',
-                                    value=25,
+                                    value=currentTemperature,
                                     min=15,
                                     max=30,
                                     className="",
                                     showCurrentValue=True,
                                     units="C",
                                 ),
-                            ], className="d-inline-flex flex-column h-75"), 
+                            ], className="d-inline-flex flex-column h-75"),
                             #Thermometer Slider Will be used in User preference setting.
                             #     dcc.Slider(
                             #         id='thermometer-slider',
@@ -123,13 +136,13 @@ metricsCard = html.Div(children=[
                                 showCurrentValue=True,
                                 id='current-humidity',
                                 units="%",
-                                value=30,
+                                value=currentHumidity,
                                 label='Current Humidity',
                                 max=100,
                                 min=0,
                                 className="h-75"
                             )
-                            ], className="d-inline-flex flex-column"), 
+                            ], className="d-inline-flex flex-column"),
                     ],className="card d-flex justify-content-around flex-row rounded-4 w-90 h-75 bg-light py-2 m-3 mb-0 shadow-sm"),
                 ], className='w-50')
 
@@ -143,9 +156,9 @@ body = html.Main(children=[
                     fanCard,
                     metricsCard,
                 ], className='mb-3'),
-                                          
+
             ], className=" rounded-4 card m-4 shadow")
-            # ])     
+            # ])
         ], className="flex-shrink-0 d-flex justify-content-center"
     );
 
@@ -168,6 +181,19 @@ app.layout = html.Div(id="theme-switch-div", children=[
 
 # Back-end Start==============================================================
 
+# Temperature and Humidity Reading qnd Displaying
+@app.callback(
+    Output('current-thermometer', 'value'),
+    Output('current-humidity', 'value'),
+    Input('interval', 'n_intervals'))
+def update_sensor(n_intervals):
+    dht.readDHT11()
+    temperatureValue = dht.temperature;
+    currentHumidity = dht.humidity;
+
+    return temperatureValue, currentHumidity
+
+
 # LED Control Callback Logic
 @app.callback(
     Output('led-power-button-result', 'children'),
@@ -178,7 +204,7 @@ def update_output(on):
         GPIO.output(ledPin, GPIO.HIGH)
         img = html.I(className="fa-solid fa-lightbulb blob", style={'font-size': '10rem', 'color': '#ffe100', 'filter': 'drop-shadow(0 0 50px #eac86c)'})
         return img
-            
+
     else:
         GPIO.output(ledPin, GPIO.LOW)
         img = html.I(className="fa-regular fa-lightbulb ", style={'font-size': '10rem', 'color':'#1b8bd1'})
@@ -194,7 +220,7 @@ def update_output(on):
         # GPIO.output(fanPin, GPIO.HIGH)
         img = html.I(className="fa-solid fa-fan rotating", style={'font-size': '10rem', 'color': '#9eff00', 'filter': 'drop-shadow(0 0 20px #009eff)'})
         return img
-            
+
     else:
         # GPIO.output(fanPin, GPIO.LOW)
         img = html.I(className="fa-solid fa-fan ", style={'font-size': '10rem', 'color':'#1b8bd1'})

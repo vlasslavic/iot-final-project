@@ -5,6 +5,11 @@ import dash_bootstrap_components as dbc
 import time
 import RPi.GPIO as GPIO
 import Freenove_DHT as DHT
+#  For Sending And Receiving Email
+import smtplib
+import imaplib
+import email
+import traceback 
 
 # Circuit Start ================================================================
 
@@ -20,12 +25,30 @@ DHTPin = 17 #define the pin of DHT11
 dht = DHT.DHT(DHTPin) #create a DHT class object
 dht.readDHT11()
 
+#  For DC Motor
+Motor1 = 22 # Enable Pin
+Motor2 = 27 # Input Pin
+Motor3 = 5 # Input Pin
+
 # Circuit End ==================================================================
 
 # Variables Start===============================================================
 
 currentTemperature = 0
 currentHumidity = 0
+
+# Var For Sending Email
+emailSender = '2069192@iotvanier.com'
+# emailSender = 'DJCGrocery@gmail.com'
+emailReceivers = ['DJCGrocery@gmail.com']
+# emailReceivers = ['DJCGrocery@gmail.com','2042827@iotvanier.com']
+
+# Var For Reading Email
+ORG_EMAIL   = "@iotvanier.com"
+FROM_EMAIL  = "2042827" + ORG_EMAIL
+FROM_PWD    = "2042827"
+SMTP_SERVER = "192.168.0.11"
+SMTP_PORT   = 993
 
 # Variables End ================================================================
 
@@ -189,10 +212,59 @@ app.layout = html.Div(id="theme-switch-div", children=[
 def update_sensor(n_intervals):
     dht.readDHT11()
     temperatureValue = dht.temperature;
+#     temperatureValue = 25;
     currentHumidity = dht.humidity;
+#     currentHumidity = 25;
+    
+#     if(temperatureValue > 24):
+#         send_email(temperatureValue)
 
     return temperatureValue, currentHumidity
 
+# Sending Email
+def send_email(temperatureValue):
+    message = """From: From Person <'DJCGrocery@gmail.com'>
+To: To Person <'DJCGrocery@gmail.com'>
+Subject: Current Temperature Reading
+
+The current temperature is """ + temperatureValue + ". Would you like to turn on the fan?"
+
+    try:
+       smtpObj = smtplib.SMTP('192.168.0.11') 
+       smtpObj.sendmail(emailSender, emailReceivers, message)         
+       print ("Successfully sent email")
+    except SMTPException:
+       print ("Error: unable to send email")
+
+#  Reading Email
+def read_email():
+    try:
+        mail = imaplib.IMAP4_SSL(SMTP_SERVER)
+        mail.login(FROM_EMAIL,FROM_PWD)
+        mail.select('inbox')
+        
+        data = mail.search(None, 'ALL')
+        mail_ids = data[1]
+        id_list = mail_ids[0].split()   
+        first_email_id = int(id_list[0])
+        latest_email_id = int(id_list[-1])
+
+
+        for i in range(latest_email_id,first_email_id, -1):
+            data = mail.fetch(str(i), '(RFC822)' )
+            for response_part in data:
+                arr = response_part[0]
+                if isinstance(arr, tuple):
+                    msg = email.message_from_string(str(arr[1],'utf-8'))
+                    email_subject = msg['subject']
+                    email_from = msg['from']
+                    print('From : ' + email_from + '\n')
+                    print('Subject : ' + email_subject + '\n')
+
+
+    except Exception as e:
+        traceback.print_exc() 
+        print(str(e))
 
 # LED Control Callback Logic
 @app.callback(
@@ -218,11 +290,26 @@ def update_output(on):
 def update_output(on):
     if on:
         # GPIO.output(fanPin, GPIO.HIGH)
+        GPIO.output(Motor1,GPIO.HIGH)
+        GPIO.output(Motor2,GPIO.LOW)
+        GPIO.output(Motor3,GPIO.HIGH)
+        sleep(5)
+
+        GPIO.output(Motor1,GPIO.HIGH)
+        GPIO.output(Motor2,GPIO.HIGH)
+        GPIO.output(Motor3,GPIO.LOW)
+
+        sleep(5)
+        GPIO.output(Motor1,GPIO.LOW)
+        GPIO.cleanup() 
         img = html.I(className="fa-solid fa-fan rotating", style={'font-size': '10rem', 'color': '#9eff00', 'filter': 'drop-shadow(0 0 20px #009eff)'})
         return img
 
     else:
         # GPIO.output(fanPin, GPIO.LOW)
+        GPIO.output(Motor1,GPIO.LOW)
+        GPIO.output(Motor2,GPIO.LOW)
+        GPIO.output(Motor3,GPIO.LOW)
         img = html.I(className="fa-solid fa-fan ", style={'font-size': '10rem', 'color':'#1b8bd1'})
         return img
 

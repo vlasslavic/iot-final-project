@@ -29,6 +29,9 @@ dht.readDHT11()
 Motor1 = 22 # Enable Pin
 Motor2 = 27 # Input Pin
 Motor3 = 5 # Input Pin
+GPIO.setup(Motor1,GPIO.OUT)
+GPIO.setup(Motor2,GPIO.OUT)
+GPIO.setup(Motor3,GPIO.OUT) 
 
 # Circuit End ==================================================================
 
@@ -37,16 +40,21 @@ Motor3 = 5 # Input Pin
 currentTemperature = 0
 currentHumidity = 0
 
+global is_sent
+is_sent = False
+response = False
+
 # Var For Sending Email
 emailSender = '2069192@iotvanier.com'
+# emailSender = '2042827@iotvanier.com'
 # emailSender = 'DJCGrocery@gmail.com'
-emailReceivers = ['DJCGrocery@gmail.com']
+emailReceivers = ['2042827@iotvanier.com']
 # emailReceivers = ['DJCGrocery@gmail.com','2042827@iotvanier.com']
 
 # Var For Reading Email
 ORG_EMAIL   = "@iotvanier.com"
-FROM_EMAIL  = "2042827" + ORG_EMAIL
-FROM_PWD    = "2042827"
+FROM_EMAIL  = "2069192" + ORG_EMAIL
+FROM_PWD    = "2069192"
 SMTP_SERVER = "192.168.0.11"
 SMTP_PORT   = 993
 
@@ -210,32 +218,58 @@ app.layout = html.Div(id="theme-switch-div", children=[
     Output('current-humidity', 'value'),
     Input('interval', 'n_intervals'))
 def update_sensor(n_intervals):
+#     global is_sent
     dht.readDHT11()
-    temperatureValue = dht.temperature;
-#     temperatureValue = 25;
+#     temperatureValue = dht.temperature;
+    temperatureValue = 25;
     currentHumidity = dht.humidity;
 #     currentHumidity = 25;
     
-#     if(temperatureValue > 24):
-#         send_email(temperatureValue)
+    if(temperatureValue > 24 and is_sent == False):
+        send_email(str(temperatureValue))
+    elif(is_sent == True):
+        print ('email already sent')
+        
+    check_for_reply()
+    
+    if(response == True):
+        read_email()
 
     return temperatureValue, currentHumidity
 
 # Sending Email
 def send_email(temperatureValue):
-    message = """From: From Person <'DJCGrocery@gmail.com'>
-To: To Person <'DJCGrocery@gmail.com'>
+    global is_sent
+    is_sent = True
+    message = """From: 2069192@iotvanier.com
+To: To Person <'2042827@iotvanier.com'>
 Subject: Current Temperature Reading
 
 The current temperature is """ + temperatureValue + ". Would you like to turn on the fan?"
 
-    try:
-       smtpObj = smtplib.SMTP('192.168.0.11') 
-       smtpObj.sendmail(emailSender, emailReceivers, message)         
-       print ("Successfully sent email")
-    except SMTPException:
-       print ("Error: unable to send email")
+#     try:
+    
+    smtpObj = smtplib.SMTP('192.168.0.11') 
+    smtpObj.sendmail(emailSender, emailReceivers, message)         
+    print ("Successfully sent email")
+    
+#     except SMTPException:
+#        print ("Error: unable to send email")
 
+
+def check_for_reply():
+    global response
+#     try:
+    mail = imaplib.IMAP4_SSL(SMTP_SERVER)
+    mail.login(FROM_EMAIL,FROM_PWD)
+    mail.select('inbox')
+        
+    data = mail.search(None, '(SUBJECT "Re: Current Temperature Reading")')
+    if(data != None):
+        response = True
+    else:
+        response = False
+        
 #  Reading Email
 def read_email():
     try:
@@ -243,23 +277,27 @@ def read_email():
         mail.login(FROM_EMAIL,FROM_PWD)
         mail.select('inbox')
         
-        data = mail.search(None, 'ALL')
+        data = mail.search(None, '(SUBJECT "Re: Current Temperature Reading")')
+#	message_ids = messages[0].split(b'')
         mail_ids = data[1]
         id_list = mail_ids[0].split()   
         first_email_id = int(id_list[0])
         latest_email_id = int(id_list[-1])
+#	latest_email_id = message_ids[-1]
 
-
-        for i in range(latest_email_id,first_email_id, -1):
-            data = mail.fetch(str(i), '(RFC822)' )
-            for response_part in data:
-                arr = response_part[0]
-                if isinstance(arr, tuple):
-                    msg = email.message_from_string(str(arr[1],'utf-8'))
-                    email_subject = msg['subject']
-                    email_from = msg['from']
-                    print('From : ' + email_from + '\n')
-                    print('Subject : ' + email_subject + '\n')
+#         for i in range(latest_email_id,first_email_id, -1):
+        data = mail.fetch(str(i), '(RFC822)' )
+        for response_part in data:
+            arr = response_part[0]
+            if isinstance(arr, tuple):
+                msg = email.message_from_string(str(arr[1],'utf-8'))
+                email_subject = msg['subject']
+                email_from = msg['from']
+                print('From : ' + email_from + '\n')
+                print('Subject : ' + email_subject + '\n')
+#	return email_subject
+#	imap.close()
+#	imap.logout()
 
 
     except Exception as e:
@@ -289,6 +327,7 @@ def update_output(on):
 )
 def update_output(on):
     if on:
+        img = html.I(className="fa-solid fa-fan rotating", style={'font-size': '10rem', 'color': '#9eff00', 'filter': 'drop-shadow(0 0 20px #009eff)'})
         # GPIO.output(fanPin, GPIO.HIGH)
         GPIO.output(Motor1,GPIO.HIGH)
         GPIO.output(Motor2,GPIO.LOW)
@@ -302,7 +341,7 @@ def update_output(on):
         sleep(5)
         GPIO.output(Motor1,GPIO.LOW)
         GPIO.cleanup() 
-        img = html.I(className="fa-solid fa-fan rotating", style={'font-size': '10rem', 'color': '#9eff00', 'filter': 'drop-shadow(0 0 20px #009eff)'})
+        
         return img
 
     else:

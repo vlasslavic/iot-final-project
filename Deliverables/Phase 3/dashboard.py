@@ -11,8 +11,7 @@ import imaplib
 import email
 import traceback
 # For Getting Values From MQTT Broker
-import random
-from paho.mqtt import client as mqtt_client
+import paho.mqtt.subscribe as subscribe
 
 # Circuit Start ================================================================
 
@@ -66,13 +65,9 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT   = 993
 
 # For MQTT Broker
-broker = 'broker.emqx.io'
-port = 1883
+broker = '192.168.0.196'
+# port = 1883
 topic = "light-intensity"
-# generate client ID with pub prefix randomly
-client_id = f'python-mqtt-{random.randint(0, 100)}'
-# username = 'emqx'
-# password = 'public'
 
 # Variables End ================================================================
 
@@ -364,36 +359,10 @@ def read_email():
         traceback.print_exc() 
         print(str(e)
 
-def connect_mqtt() -> mqtt_client:
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print("Failed to connect, return code %d\n", rc)
+def on_message_print(client, userdata, message):
+    print("%s %s" % (message.topic, message.payload))
 
-    client = mqtt_client.Client(client_id)
-    client.username_pw_set(username, password)
-    client.on_connect = on_connect
-    client.connect(broker, port)
-    return client
-
-
-def subscribe(client: mqtt_client):
-    def on_message(client, userdata, msg):
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-
-    client.subscribe(topic)
-    client.on_message = on_message
-
-
-def run():
-    client = connect_mqtt()
-    subscribe(client)
-    client.loop_forever()
-
-
-# if __name__ == '__main__':
-#     run()
+subscribe.callback(on_message_print, topic, hostname=broker, port=1883)
 
 # LED Control Callback Logic
 @app.callback(
@@ -473,3 +442,4 @@ def main():
 main()
 
 # Back-end End==============================================================
+

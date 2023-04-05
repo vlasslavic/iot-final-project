@@ -22,6 +22,7 @@ from paho.mqtt import client as mqtt_client
 import sqlite3
 from sqlite3 import Error
 
+
 # Circuit Start ================================================================
 
 GPIO.setmode(GPIO.BCM)
@@ -79,12 +80,14 @@ uLightThreshold = 400
 receiverEmail = 'vlasveaci@gmail.com'
 
 # For MQTT Broker
+
 broker = '192.168.0.159'
 #topic = "light-intensity"
 port = 1883
 topic = "get-light-intensity"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 100)}'
+
 
 # Variables End ================================================================
 
@@ -396,12 +399,9 @@ def check_light(n_intervals,value):
     return message2
 
 
-def connect_mqtt() -> mqtt_client:
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print("Failed to connect, return code %d\n", rc)
+def on_message_print(client, userdata, message):
+    print("%s %s" % (message.topic, message.payload))
+
 
     client = mqtt_client.Client(client_id)
     client.on_connect = on_connect
@@ -413,6 +413,7 @@ def connect_mqtt() -> mqtt_client:
    # print("%s %s" % (message.topic, message.payload))
 
 #subscribe.callback(on_message_print, topic, hostname=broker, port=1883)
+
 
 # LED Control Callback Logic
 @app.callback(
@@ -597,4 +598,6 @@ def main():
 
 main()
 
+
 # Back-end End==============================================================
+

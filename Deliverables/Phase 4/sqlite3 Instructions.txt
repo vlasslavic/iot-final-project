@@ -1,0 +1,45 @@
+How to work with sqlite3
+
+User ID
+• Name
+• Temp. Threshold
+• Humidity Threshold
+• Light intensity Threshold
+
+open deliverable 4 folder in terminal 
+
+type:
+
+	sqlite3 casaConnect.db
+
+Now you have access to the db.
+
+
+to add table e.g:
+
+	BEGIN;
+
+	CREATE TABLE users (userID INTEGER PRIMARY KEY AUTOINCREMENT, tagID varchar(16), fullName varchar(255), tempThreshold decimal(2,1), humidityThreshold decimal(2,1), lightIntensityThreshold INTEGER, profilePic blob);
+
+	COMMIT;
+
+to insert in table e.g:
+
+	BEGIN;
+
+	INSERT INTO users(tagID, fullName, tempThreshold, humidityThreshold, lightIntensityThreshold) values("E351AC11",'Veaceslav Vlas', 22.2, 48, 500);
+
+	INSERT INTO users(tagID, fullName, tempThreshold, humidityThreshold, lightIntensityThreshold) values("75C1A7AC",'Dinal Patel', 24.5, 55, 450);
+
+	INSERT INTO users(tagID, fullName, tempThreshold, humidityThreshold, lightIntensityThreshold) values("871C43B3",'Justin Balibalos', 23.7, 50, 475);
+	
+
+
+	COMMIT;
+
+to drop a table:
+	
+	DROP TABLE users;
+
+to view table:
+	SELECT * FROM users;
